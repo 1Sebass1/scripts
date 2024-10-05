@@ -2,11 +2,16 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
 local ChatEvent = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents").SayMessageRequest
 local allowedUser = "DishyWave21613"
 
 -- Wood types to cycle through
 local woodTypes = {"wood", "woodBirch", "woodHickory", "woodMaple", "woodPine", "woodSpirit"}
+
+-- Private server details
+local placeId = 123456789 -- Replace with the actual place ID
+local privateServerCode = "83c0fd3a7e76be4fa160f91a968532fa" -- Your private server code
 
 -- Command responses
 local function getWoodAmount(woodType, toolName)
@@ -51,9 +56,14 @@ local function depositWood()
     end
 end
 
+-- Function to join the private server
+local function joinPrivateServer()
+    TeleportService:TeleportToPrivateServer(placeId, privateServerCode, {LocalPlayer})
+end
+
 local function onCommandReceived(command)
     if command == ">help" then
-        local helpMessage = "Commands: >help - Show this message, >info - Display bot info, >oakWood - Get Oak amount, >birchWood - Get Birch amount, >pineWood - Get Pine amount, >mapleWood - Get Maple amount, >hickoryWood - Get Hickory amount, >depositWood - Deposit all wood until none left"
+        local helpMessage = "Commands: >help - Show this message, >info - Display bot info, >oakWood - Get Oak amount, >birchWood - Get Birch amount, >pineWood - Get Pine amount, >mapleWood - Get Maple amount, >hickoryWood - Get Hickory amount, >depositWood - Deposit all wood until none left, >joinVIP - Join the private server"
         ChatEvent:FireServer(helpMessage, "All")
     elseif command == ">info" then
         local infoMessage = "This is a basic chat bot for Roblox!"
@@ -70,6 +80,8 @@ local function onCommandReceived(command)
         getWoodAmount("Hickory", "woodHickory")
     elseif command == ">depositwood" then
         depositWood()
+    elseif command == ">joinvip" then
+        joinPrivateServer() -- Join private server when the command is called
     else
         ChatEvent:FireServer("Unknown command. Type >help for available commands.", "All")
     end
