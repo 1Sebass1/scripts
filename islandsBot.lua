@@ -39,13 +39,11 @@ local function depositWood()
                 
                 game:GetService("ReplicatedStorage").rbxts_include.node_modules:FindFirstChild("@rbxts").net.out._NetManaged.CLIENT_CHEST_TRANSACTION:InvokeServer(unpack(args))
                 toolFound = true
-                ChatEvent:FireServer("Depositing " .. woodType .. ": " .. tostring(amount), "All")
                 wait(1) -- Optional delay
                 break
             end
         end
         if not toolFound then
-            ChatEvent:FireServer("No more wood tools found to deposit!", "All")
             break
         end
     end
