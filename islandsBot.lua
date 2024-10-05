@@ -10,7 +10,7 @@ local allowedUser = "DishyWave21613"
 local woodTypes = {"wood", "woodBirch", "woodHickory", "woodMaple", "woodPine", "woodSpirit"}
 
 -- Private server details
-local placeId = 123456789 -- Replace with the actual place ID
+local placeId = 4872321990 -- Replace with the actual place ID
 local privateServerCode = "83c0fd3a7e76be4fa160f91a968532fa" -- Your private server code
 
 -- Command responses
