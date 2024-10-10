@@ -39,7 +39,7 @@ local function depositWood()
                 
                 game:GetService("ReplicatedStorage").rbxts_include.node_modules:FindFirstChild("@rbxts").net.out._NetManaged.CLIENT_CHEST_TRANSACTION:InvokeServer(unpack(args))
                 toolFound = true
-                wait(1) -- Optional delay
+                wait(0.5) -- Optional delay
                 break
             end
         end
