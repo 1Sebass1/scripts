@@ -212,6 +212,43 @@ discordSection:addButton(syn and "Join the Discord server" or "Copy Discord Link
 end)
 
 
+local spinSection = vehiclePage:addSection("Car Spin")
+local spinEnabled = false
+local spinSpeed = 10 -- Default spin speed
+spinSection:addToggle("Spin Enabled", false, function(v)
+    spinEnabled = v
+end)
+
+spinSection:addSlider("Spin Speed", 10, 1, 100, function(v)
+    spinSpeed = v
+end)
+
+RunService.Stepped:Connect(function()
+    local Character = LocalPlayer.Character
+    if spinEnabled and Character and typeof(Character) == "Instance" then
+        local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
+        if Humanoid and typeof(Humanoid) == "Instance" then
+            local SeatPart = Humanoid.SeatPart
+            if SeatPart and typeof(SeatPart) == "Instance" and SeatPart:IsA("VehicleSeat") then
+                local Vehicle = GetVehicleFromDescendant(SeatPart)
+                if Vehicle and Vehicle:IsA("Model") then
+                    -- Apply angular velocity to make the car spin
+                    local BodyAngularVelocity = Vehicle:FindFirstChildOfClass("BodyAngularVelocity")
+                    if not BodyAngularVelocity then
+                        BodyAngularVelocity = Instance.new("BodyAngularVelocity")
+                        BodyAngularVelocity.MaxTorque = Vector3.new(500000, 500000, 500000)  -- Adjust as needed
+                        BodyAngularVelocity.P = 10000  -- Adjust for smoother or snappier spins
+                        BodyAngularVelocity.Parent = Vehicle.PrimaryPart
+                    end
+                    BodyAngularVelocity.AngularVelocity = Vector3.new(0, spinSpeed, 0)  -- Apply spin around the Y-axis
+                end
+            end
+        end
+    end
+end)
+
+
+
 local function CloseGUI()
     Venyx:toggle()
 end
