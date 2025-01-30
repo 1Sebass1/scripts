@@ -39,23 +39,6 @@ spinSection:addSlider("Spin Speed", 10, 1, 10000, function(v)
     spinSpeed = v
 end)
 
--- Jumping Section
-local jumpEnabled = false
-local jumpForce = 500 -- How high the vehicle jumps
-vehiclePage:addToggle("Jump Enabled", false, function(v)
-    jumpEnabled = v
-end)
-
-vehiclePage:addSlider("Jump Force", 100, 0, 1000, function(v)
-    jumpForce = v
-end)
-
--- Barrel Roll Section
-local barrelRollEnabled = false
-vehiclePage:addToggle("Barrel Roll Enabled", false, function(v)
-    barrelRollEnabled = v
-end)
-
 RunService.Stepped:Connect(function()
     local Character = LocalPlayer.Character
     if spinEnabled and Character and typeof(Character) == "Instance" then
@@ -95,7 +78,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Stop spin when toggled off and reset the position
+-- Stop the spin when toggled off and reset the position
 RunService.Stepped:Connect(function()
     if not spinEnabled then
         local Character = LocalPlayer.Character
@@ -120,53 +103,6 @@ RunService.Stepped:Connect(function()
                         local BodyPosition = Vehicle:FindFirstChildOfClass("BodyPosition")
                         if BodyPosition then
                             BodyPosition:Destroy()
-                        end
-                    end
-                end
-            end
-        end
-    end
-end)
-
--- Jump Mechanism
-RunService.Stepped:Connect(function()
-    local Character = LocalPlayer.Character
-    if jumpEnabled and Character and typeof(Character) == "Instance" then
-        local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
-        if Humanoid and typeof(Humanoid) == "Instance" then
-            local SeatPart = Humanoid.SeatPart
-            if SeatPart and typeof(SeatPart) == "Instance" and SeatPart:IsA("VehicleSeat") then
-                local Vehicle = GetVehicleFromDescendant(SeatPart)
-                if Vehicle and Vehicle:IsA("Model") then
-                    -- Apply an upward force (jump)
-                    Vehicle.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, jumpForce, 0)
-                end
-            end
-        end
-    end
-end)
-
--- Barrel Roll Mechanism
-UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if input.KeyCode == Enum.KeyCode.Space then  -- Spacebar for barrel roll
-        if barrelRollEnabled then
-            local Character = LocalPlayer.Character
-            if Character and typeof(Character) == "Instance" then
-                local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
-                if Humanoid and typeof(Humanoid) == "Instance" then
-                    local SeatPart = Humanoid.SeatPart
-                    if SeatPart and typeof(SeatPart) == "Instance" and SeatPart:IsA("VehicleSeat") then
-                        local Vehicle = GetVehicleFromDescendant(SeatPart)
-                        if Vehicle and Vehicle:IsA("Model") then
-                            -- Apply a strong angular velocity for barrel roll
-                            local BodyAngularVelocity = Vehicle:FindFirstChildOfClass("BodyAngularVelocity")
-                            if not BodyAngularVelocity then
-                                BodyAngularVelocity = Instance.new("BodyAngularVelocity")
-                                BodyAngularVelocity.MaxTorque = Vector3.new(500000, 500000, 500000)
-                                BodyAngularVelocity.P = 10000
-                                BodyAngularVelocity.Parent = Vehicle.PrimaryPart
-                            end
-                            BodyAngularVelocity.AngularVelocity = Vector3.new(0, 0, 500)  -- Apply rotation around the Z-axis
                         end
                     end
                 end
