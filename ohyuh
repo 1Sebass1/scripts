@@ -27,62 +27,7 @@ local function GetVehicleFromDescendant(Descendant)
 		Descendant:FindFirstAncestorWhichIsA("Model")
 end
 
-local function TeleportVehicle(CoordinateFrame: CFrame)
-	local Parent = LocalPlayer.Character.Parent
-	local Vehicle = GetVehicleFromDescendant(LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid").SeatPart)
-	LocalPlayer.Character.Parent = Vehicle
-	local success, response = pcall(function()
-		return Vehicle:SetPrimaryPartCFrame(CoordinateFrame)
-	end)
-	if not success then
-		return Vehicle:MoveTo(CoordinateFrame.Position)
-	end
-end
-
 local vehiclePage = Venyx:addPage("Vehicle", 8356815386)
-local usageSection = vehiclePage:addSection("Usage")
-local velocityEnabled = true
-usageSection:addToggle("Keybinds Active", velocityEnabled, function(v) velocityEnabled = v end)
-local flightSection = vehiclePage:addSection("Flight")
-local flightEnabled = false
-local flightSpeed = 1
-flightSection:addToggle("Enabled", false, function(v) flightEnabled = v end)
-flightSection:addSlider("Speed", 100, 0, 800, function(v) flightSpeed = v / 100 end)
-local defaultCharacterParent 
-RunService.Stepped:Connect(function()
-	local Character = LocalPlayer.Character
-	if flightEnabled == true then
-		if Character and typeof(Character) == "Instance" then
-			local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
-			if Humanoid and typeof(Humanoid) == "Instance" then
-				local SeatPart = Humanoid.SeatPart
-				if SeatPart and typeof(SeatPart) == "Instance" and SeatPart:IsA("VehicleSeat") then
-					local Vehicle = GetVehicleFromDescendant(SeatPart)
-					if Vehicle and Vehicle:IsA("Model") then
-						Character.Parent = Vehicle
-						if not Vehicle.PrimaryPart then
-							if SeatPart.Parent == Vehicle then
-								Vehicle.PrimaryPart = SeatPart
-							else
-								Vehicle.PrimaryPart = Vehicle:FindFirstChildWhichIsA("BasePart")
-							end
-						end
-						local PrimaryPartCFrame = Vehicle:GetPrimaryPartCFrame()
-						Vehicle:SetPrimaryPartCFrame(CFrame.new(PrimaryPartCFrame.Position, PrimaryPartCFrame.Position + workspace.CurrentCamera.CFrame.LookVector) * (UserInputService:GetFocusedTextBox() and CFrame.new(0, 0, 0) or CFrame.new((UserInputService:IsKeyDown(Enum.KeyCode.D) and flightSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.A) and -flightSpeed) or 0, (UserInputService:IsKeyDown(Enum.KeyCode.E) and flightSpeed / 2) or (UserInputService:IsKeyDown(Enum.KeyCode.Q) and -flightSpeed / 2) or 0, (UserInputService:IsKeyDown(Enum.KeyCode.S) and flightSpeed) or (UserInputService:IsKeyDown(Enum.KeyCode.W) and -flightSpeed) or 0)))
-						SeatPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-						SeatPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-					end
-				end
-			end
-		end
-	else
-		if Character and typeof(Character) == "Instance" then
-			Character.Parent = defaultCharacterParent or Character.Parent
-			defaultCharacterParent = Character.Parent
-		end
-	end
-end)
-
 local spinSection = vehiclePage:addSection("Car Spin")
 local spinEnabled = false
 local spinSpeed = 10 -- Default spin speed
@@ -103,6 +48,17 @@ RunService.Stepped:Connect(function()
             if SeatPart and typeof(SeatPart) == "Instance" and SeatPart:IsA("VehicleSeat") then
                 local Vehicle = GetVehicleFromDescendant(SeatPart)
                 if Vehicle and Vehicle:IsA("Model") then
+                    -- Fix the vehicle's position
+                    local BodyPosition = Vehicle:FindFirstChildOfClass("BodyPosition")
+                    if not BodyPosition then
+                        BodyPosition = Instance.new("BodyPosition")
+                        BodyPosition.MaxForce = Vector3.new(100000, 100000, 100000) -- High enough force to hold it in place
+                        BodyPosition.D = 10 -- Damping (how much it resists moving)
+                        BodyPosition.P = 5000 -- Strength of the force
+                        BodyPosition.Parent = Vehicle.PrimaryPart
+                    end
+                    BodyPosition.Position = Vehicle.PrimaryPart.Position -- Keeps it fixed
+
                     -- Apply angular velocity to make the car spin
                     local BodyAngularVelocity = Vehicle:FindFirstChildOfClass("BodyAngularVelocity")
                     if not BodyAngularVelocity then
@@ -112,6 +68,29 @@ RunService.Stepped:Connect(function()
                         BodyAngularVelocity.Parent = Vehicle.PrimaryPart
                     end
                     BodyAngularVelocity.AngularVelocity = Vector3.new(0, spinSpeed, 0)  -- Apply spin around the Y-axis
+                end
+            end
+        end
+    end
+end)
+
+-- Stop the spin when toggled off
+RunService.Stepped:Connect(function()
+    if not spinEnabled then
+        local Character = LocalPlayer.Character
+        if Character and typeof(Character) == "Instance" then
+            local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
+            if Humanoid and typeof(Humanoid) == "Instance" then
+                local SeatPart = Humanoid.SeatPart
+                if SeatPart and typeof(SeatPart) == "Instance" and SeatPart:IsA("VehicleSeat") then
+                    local Vehicle = GetVehicleFromDescendant(SeatPart)
+                    if Vehicle and Vehicle:IsA("Model") then
+                        -- Remove BodyAngularVelocity to stop spinning
+                        local BodyAngularVelocity = Vehicle:FindFirstChildOfClass("BodyAngularVelocity")
+                        if BodyAngularVelocity then
+                            BodyAngularVelocity:Destroy()
+                        end
+                    end
                 end
             end
         end
@@ -151,4 +130,3 @@ UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
         CloseGUI()
     end
 end)
-
