@@ -48,16 +48,20 @@ RunService.Stepped:Connect(function()
             if SeatPart and typeof(SeatPart) == "Instance" and SeatPart:IsA("VehicleSeat") then
                 local Vehicle = GetVehicleFromDescendant(SeatPart)
                 if Vehicle and Vehicle:IsA("Model") then
-                    -- Fix the vehicle's position
+                    -- Fix the vehicle's position using BodyPosition
                     local BodyPosition = Vehicle:FindFirstChildOfClass("BodyPosition")
                     if not BodyPosition then
                         BodyPosition = Instance.new("BodyPosition")
-                        BodyPosition.MaxForce = Vector3.new(100000, 100000, 100000) -- High enough force to hold it in place
-                        BodyPosition.D = 10 -- Damping (how much it resists moving)
-                        BodyPosition.P = 5000 -- Strength of the force
+                        BodyPosition.MaxForce = Vector3.new(1000000, 1000000, 1000000)  -- High enough force to keep it locked
+                        BodyPosition.D = 10  -- Damping, how resistant it is to moving
+                        BodyPosition.P = 10000  -- Strength of the force
                         BodyPosition.Parent = Vehicle.PrimaryPart
                     end
-                    BodyPosition.Position = Vehicle.PrimaryPart.Position -- Keeps it fixed
+                    BodyPosition.Position = Vehicle.PrimaryPart.Position  -- Keep it fixed in place
+
+                    -- Prevent any movement by setting linear velocity to zero
+                    Vehicle.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                    Vehicle.PrimaryPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
 
                     -- Apply angular velocity to make the car spin
                     local BodyAngularVelocity = Vehicle:FindFirstChildOfClass("BodyAngularVelocity")
@@ -74,7 +78,7 @@ RunService.Stepped:Connect(function()
     end
 end)
 
--- Stop the spin when toggled off
+-- Stop the spin when toggled off and reset the position
 RunService.Stepped:Connect(function()
     if not spinEnabled then
         local Character = LocalPlayer.Character
@@ -89,6 +93,16 @@ RunService.Stepped:Connect(function()
                         local BodyAngularVelocity = Vehicle:FindFirstChildOfClass("BodyAngularVelocity")
                         if BodyAngularVelocity then
                             BodyAngularVelocity:Destroy()
+                        end
+
+                        -- Reset velocity to ensure it stops moving
+                        Vehicle.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                        Vehicle.PrimaryPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+
+                        -- Optionally, remove BodyPosition to allow free movement again
+                        local BodyPosition = Vehicle:FindFirstChildOfClass("BodyPosition")
+                        if BodyPosition then
+                            BodyPosition:Destroy()
                         end
                     end
                 end
