@@ -1,5 +1,5 @@
 local jumpForce = 50 -- Adjust this value for higher/lower jumps
-local jumpKey = Enum.KeyCode.Space -- Change if needed
+local jumpKey = Enum.KeyCode.E -- Change if needed
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
