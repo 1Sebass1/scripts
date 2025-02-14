@@ -28,81 +28,51 @@ local function GetVehicleFromDescendant(Descendant)
 end
 
 local vehiclePage = Venyx:addPage("Vehicle", 8356815386)
-local spinSection = vehiclePage:addSection("Car Spin")
-local spinEnabled = false
-local spinSpeed = 10 -- Default spin speed
-spinSection:addToggle("Spin Enabled", false, function(v)
-    spinEnabled = v
+local floatEnabled = false
+local floatSpeed = 10 -- Default float speed
+
+local floatSection = vehiclePage:addSection("Car Float")
+floatSection:addToggle("Float Enabled", false, function(v)
+    floatEnabled = v
 end)
 
-spinSection:addSlider("Spin Speed", 10, 1, 1000000, function(v)
-    spinSpeed = v
+floatSection:addSlider("Float Speed", 10, 1, 1000, function(v)
+    floatSpeed = v
 end)
 
 RunService.Stepped:Connect(function()
     local Character = LocalPlayer.Character
-    if spinEnabled and Character and typeof(Character) == "Instance" then
+    if floatEnabled and Character then
         local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
-        if Humanoid and typeof(Humanoid) == "Instance" then
+        if Humanoid then
             local SeatPart = Humanoid.SeatPart
-            if SeatPart and typeof(SeatPart) == "Instance" and SeatPart:IsA("VehicleSeat") then
+            if SeatPart and SeatPart:IsA("VehicleSeat") then
                 local Vehicle = GetVehicleFromDescendant(SeatPart)
-                if Vehicle and Vehicle:IsA("Model") then
-                    -- Fix the vehicle's position using BodyPosition
-                    local BodyPosition = Vehicle:FindFirstChildOfClass("BodyPosition")
-                    if not BodyPosition then
-                        BodyPosition = Instance.new("BodyPosition")
-                        BodyPosition.MaxForce = Vector3.new(1000000, 1000000, 1000000)  -- High enough force to keep it locked
-                        BodyPosition.D = 10  -- Damping, how resistant it is to moving
-                        BodyPosition.P = 10000  -- Strength of the force
-                        BodyPosition.Parent = Vehicle.PrimaryPart
+                if Vehicle and Vehicle.PrimaryPart then
+                    -- Apply continuous upward force
+                    local BodyVelocity = Vehicle.PrimaryPart:FindFirstChildOfClass("BodyVelocity")
+                    if not BodyVelocity then
+                        BodyVelocity = Instance.new("BodyVelocity")
+                        BodyVelocity.MaxForce = Vector3.new(0, math.huge, 0) -- Infinite upward force
+                        BodyVelocity.Parent = Vehicle.PrimaryPart
                     end
-                    BodyPosition.Position = Vehicle.PrimaryPart.Position  -- Keep it fixed in place
-
-                    -- Prevent any movement by setting linear velocity to zero
-                    Vehicle.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                    Vehicle.PrimaryPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-
-                    -- Apply angular velocity to make the car spin
-                    local BodyAngularVelocity = Vehicle:FindFirstChildOfClass("BodyAngularVelocity")
-                    if not BodyAngularVelocity then
-                        BodyAngularVelocity = Instance.new("BodyAngularVelocity")
-                        BodyAngularVelocity.MaxTorque = Vector3.new(500000, 500000, 500000)  -- Adjust as needed
-                        BodyAngularVelocity.P = 10000  -- Adjust for smoother or snappier spins
-                        BodyAngularVelocity.Parent = Vehicle.PrimaryPart
-                    end
-                    BodyAngularVelocity.AngularVelocity = Vector3.new(spinspeed, spinSpeed, spinspeed)  -- Apply spin around the Y-axis
+                    BodyVelocity.Velocity = Vector3.new(0, floatSpeed, 0) -- Move up
                 end
             end
         end
-    end
-end)
-
--- Stop the spin when toggled off and reset the position
-RunService.Stepped:Connect(function()
-    if not spinEnabled then
+    else
+        -- Stop floating when toggle is off
         local Character = LocalPlayer.Character
-        if Character and typeof(Character) == "Instance" then
+        if Character then
             local Humanoid = Character:FindFirstChildWhichIsA("Humanoid")
-            if Humanoid and typeof(Humanoid) == "Instance" then
+            if Humanoid then
                 local SeatPart = Humanoid.SeatPart
-                if SeatPart and typeof(SeatPart) == "Instance" and SeatPart:IsA("VehicleSeat") then
+                if SeatPart and SeatPart:IsA("VehicleSeat") then
                     local Vehicle = GetVehicleFromDescendant(SeatPart)
-                    if Vehicle and Vehicle:IsA("Model") then
-                        -- Remove BodyAngularVelocity to stop spinning
-                        local BodyAngularVelocity = Vehicle:FindFirstChildOfClass("BodyAngularVelocity")
-                        if BodyAngularVelocity then
-                            BodyAngularVelocity:Destroy()
-                        end
-
-                        -- Reset velocity to ensure it stops moving
-                        Vehicle.PrimaryPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                        Vehicle.PrimaryPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
-
-                        -- Optionally, remove BodyPosition to allow free movement again
-                        local BodyPosition = Vehicle:FindFirstChildOfClass("BodyPosition")
-                        if BodyPosition then
-                            BodyPosition:Destroy()
+                    if Vehicle and Vehicle.PrimaryPart then
+                        local BodyVelocity = Vehicle.PrimaryPart:FindFirstChildOfClass("BodyVelocity")
+                        if BodyVelocity then
+                            BodyVelocity:Destroy()
                         end
                     end
                 end
@@ -110,6 +80,7 @@ RunService.Stepped:Connect(function()
         end
     end
 end)
+
 
 local infoPage = Venyx:addPage("Information", 8356778308)
 local discordSection = infoPage:addSection("Discord")
