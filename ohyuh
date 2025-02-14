@@ -35,7 +35,7 @@ spinSection:addToggle("Spin Enabled", false, function(v)
     spinEnabled = v
 end)
 
-spinSection:addSlider("Spin Speed", 10, 1, 10000, function(v)
+spinSection:addSlider("Spin Speed", 10, 1, 1000000, function(v)
     spinSpeed = v
 end)
 
@@ -71,7 +71,7 @@ RunService.Stepped:Connect(function()
                         BodyAngularVelocity.P = 10000  -- Adjust for smoother or snappier spins
                         BodyAngularVelocity.Parent = Vehicle.PrimaryPart
                     end
-                    BodyAngularVelocity.AngularVelocity = Vector3.new(0, spinSpeed, 0)  -- Apply spin around the Y-axis
+                    BodyAngularVelocity.AngularVelocity = Vector3.new(spinspeed, spinSpeed, spinspeed)  -- Apply spin around the Y-axis
                 end
             end
         end
