@@ -5,8 +5,8 @@ local Players = game:GetService("Players")
 -- Remote function
 local GetServers = ReplicatedStorage:WaitForChild("PrivateServers"):WaitForChild("GetServers")
 
-local API_URL_STATUS = "http://157.245.95.255:5000/status"
-local API_URL_INFO = "http://157.245.95.255:5000/info"
+local API_URL_STATUS = "http://157.245.80.25:5000/status"
+local API_URL_INFO = "http://157.245.80.25:5000/info"
 
 -- Detect which request function is available
 local request_func = syn and syn.request or http_request or fluxus and fluxus.request or krnl_request or request
