@@ -16,16 +16,6 @@ if not request_func then
     return
 end
 
--- Optional: Pretty-print for debugging
-local function printServersPretty(servers)
-    for serverId, serverData in pairs(servers) do
-        print("Server ID:", serverId)
-        for key, value in pairs(serverData) do
-            print("  " .. key .. ": ", value)
-        end
-        print("------------------------")
-    end
-end
 
 -- Run the loop asynchronously
 task.spawn(function()
