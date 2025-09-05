@@ -1,9 +1,6 @@
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
 
 -- Remote function
 local GetServers = ReplicatedStorage:WaitForChild("PrivateServers"):WaitForChild("GetServers")
@@ -19,36 +16,7 @@ if not request_func then
     return
 end
 
--- Create white GUI overlay
-local screenGui = Instance.new("ScreenGui")
-screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
-screenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-
-local whiteFrame = Instance.new("Frame")
-whiteFrame.Size = UDim2.new(1, 0, 1, 0)
-whiteFrame.BackgroundColor3 = Color3.new(1, 1, 1)
-whiteFrame.BorderSizePixel = 0
-whiteFrame.Parent = screenGui
-
--- Remove all textures for minimal lag
-for _, obj in pairs(Workspace:GetDescendants()) do
-    if obj:IsA("Texture") or obj:IsA("Decal") then
-        obj:Destroy()
-    elseif obj:IsA("Part") or obj:IsA("MeshPart") then
-        obj.Material = Enum.Material.SmoothPlastic
-        obj.Reflectance = 0
-        obj.Color = Color3.new(1, 1, 1)
-    end
-end
-
--- Optional: disable shadows, lighting, and effects
-Lighting.GlobalShadows = false
-Lighting.FogEnd = 9e9
-Lighting.Brightness = 3
-Lighting.ClockTime = 12
-
--- Optional: print for debugging
+-- Optional: Pretty-print for debugging
 local function printServersPretty(servers)
     for serverId, serverData in pairs(servers) do
         print("Server ID:", serverId)
@@ -59,8 +27,8 @@ local function printServersPretty(servers)
     end
 end
 
--- Main loop
 while wait(1) do
+    -- Part 1: Check the status using the custom request function
     local success, response = pcall(function()
         return request_func({
             Url = API_URL_STATUS,
@@ -69,24 +37,35 @@ while wait(1) do
     end)
 
     if success and response.Success then
+        -- Attempt to parse the JSON response
         local statusData = HttpService:JSONDecode(response.Body)
 
+        -- Check if the 'run_now' key is true
         if statusData.run_now == true then
             print("Received signal from API. Getting server list...")
+
+            -- Invoke remote to get all servers
             local servers = GetServers:InvokeServer()
+
+            -- Optional: print formatted output for debugging
             printServersPretty(servers)
 
+            -- Part 2: Send the server data as JSON
             local json_body = HttpService:JSONEncode({ servers = servers })
+
             pcall(function()
                 request_func({
                     Url = API_URL_INFO,
                     Method = "POST",
-                    Headers = { ["Content-Type"] = "application/json" },
+                    Headers = {
+                        ["Content-Type"] = "application/json"
+                    },
                     Body = json_body
                 })
             end)
         end
     else
+        -- This block handles errors, like if the API server isn't running
         warn("Failed to connect to the local API. Make sure the local_api.py script is running.")
     end
 end
