@@ -1,6 +1,8 @@
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
 
 -- Remote function
 local GetServers = ReplicatedStorage:WaitForChild("PrivateServers"):WaitForChild("GetServers")
@@ -27,8 +29,64 @@ local function printServersPretty(servers)
     end
 end
 
+-- Anti-lag function
+local function removeVisuals(parent)
+    for _, obj in pairs(parent:GetDescendants()) do
+        if obj:IsA("Decal") or obj:IsA("Texture") then
+            obj:Destroy()
+        elseif obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Beam") then
+            obj.Enabled = false
+        elseif obj:IsA("SurfaceGui") or obj:IsA("BillboardGui") then
+            obj:Destroy()
+        end
+    end
+end
+
+local function applyAntiLag()
+    -- Remove heavy objects from Workspace and ReplicatedStorage
+    removeVisuals(Workspace)
+    removeVisuals(ReplicatedStorage)
+
+    -- Simplify terrain
+    if Workspace:FindFirstChild("Terrain") then
+        local Terrain = Workspace.Terrain
+        Terrain.WaterWaveSize = 0
+        Terrain.WaterWaveSpeed = 0
+        Terrain.WaterReflectance = 0
+        Terrain.WaterTransparency = 0
+        Terrain:Clear()
+    end
+
+    -- Make the screen white
+    Lighting.Ambient = Color3.new(1,1,1)
+    Lighting.OutdoorAmbient = Color3.new(1,1,1)
+    Lighting.FogEnd = 0
+    Lighting.FogStart = 0
+    Lighting.FogColor = Color3.new(1,1,1)
+
+    -- Remove all player GUIs
+    for _, player in pairs(Players:GetPlayers()) do
+        if player.PlayerGui then
+            for _, gui in pairs(player.PlayerGui:GetChildren()) do
+                gui:Destroy()
+            end
+        end
+    end
+end
+
+-- Initial anti-lag application
+applyAntiLag()
+
+-- Continuously enforce anti-lag in case new objects appear
+spawn(function()
+    while true do
+        wait(5)
+        applyAntiLag()
+    end
+end)
+
+-- Main API loop
 while wait(1) do
-    -- Part 1: Check the status using the custom request function
     local success, response = pcall(function()
         return request_func({
             Url = API_URL_STATUS,
@@ -37,20 +95,15 @@ while wait(1) do
     end)
 
     if success and response.Success then
-        -- Attempt to parse the JSON response
         local statusData = HttpService:JSONDecode(response.Body)
         
-        -- Check if the 'run_now' key is true
         if statusData.run_now == true then
             print("Received signal from API. Getting server list...")
 
-            -- Invoke remote to get all servers
             local servers = GetServers:InvokeServer()
 
-            -- Optional: print formatted output for debugging
             printServersPretty(servers)
 
-            -- Part 2: Send the server data as JSON
             local json_body = HttpService:JSONEncode({ servers = servers })
 
             pcall(function()
@@ -65,7 +118,6 @@ while wait(1) do
             end)
         end
     else
-        -- This block handles errors, like if the API server isn't running
         warn("Failed to connect to the local API. Make sure the local_api.py script is running.")
     end
 end
